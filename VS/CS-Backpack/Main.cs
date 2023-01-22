@@ -1,4 +1,8 @@
-﻿namespace CunningSurvivor
+using Il2Cpp;
+using Il2CppTLD.Gear;
+using static Il2Cpp.Utils;
+
+namespace CunningSurvivor
 {
     internal class BPMain : MelonMod
     {
@@ -7,15 +11,38 @@
 
         public static AssetBundle backpackBundle;
 
-        public static Transform backpack;
+        private static Transform backpackInst;
+        private static Transform backpack;
+        private static bool backpackPlaced { get; set; } = false;
+
+        private static List<String> usedAttachPoints = new List<String>();
 
 
         public static readonly string modFolderName = "cunningSurvivor/backpack/";
         public static readonly string bundleName = "bundlebackpack";
         public static readonly string storedDataFolderName = "Assets/LooseFiles/";
 
+        private static Dictionary<String, String> attachGearItems = new Dictionary<String, String>() {
+            { "GEAR_BearSkinBedRoll", "attachPoint_bedroll" },
+            { "GEAR_BedRoll", "attachPoint_bedroll" },
+            { "GEAR_Bow", "attachPoint_bow" },
+            { "GEAR_RecycledCan", "attachPoint_can" },
+            { "GEAR_BlueFlare", "attachPoint_flareBlue" },
+            { "GEAR_FlareA", "attachPoint_flareRed" },
+            { "GEAR_Flashlight", "attachPoint_flashlight" },
+            { "GEAR_Hatchet", "attachPoint_hatchet" },
+            { "GEAR_HatchetImprovised", "attachPoint_hatchet" },
+            { "GEAR_KeroseneLampB", "attachPoint_lantern"},
+            { "GEAR_CookingPot", "attachPoint_pot" },
+            { "GEAR_Prybar", "attachPoint_prybar" },
+            { "GEAR_Rope", "attachPoint_rope" },
+            { "GEAR_SprayPaintCan", "attachPoint_sprayCan" },
+            { "GEAR_Torch", "attachPoint_torch" },
+            { "GEAR_Arrow|3", "attachPoint_arrow" }
+        };
 
-        public override void OnApplicationStart()
+
+        public override void OnInitializeMelon()
         {
             // Load assets
             backpackBundle = AssetBundle.LoadFromFile("Mods/" + modFolderName + bundleName);
@@ -28,14 +55,23 @@
             Settings.OnLoad();
         }
 
-        private static Transform PrepareGear(string gear, string attachPointName, string flag = "")
+        private static bool AttachGearItem(string gear, string attachPointName, string flag = "")
         {
+            if (usedAttachPoints.Contains(attachPointName))
+            {
+                if (Settings.options.backPackDebug)
+                {
+                    MelonLogger.Msg("Attach point already used " + attachPointName);
+                }
+                    return false;
+            }
+
             Transform output = GearItem.InstantiateGearItem(gear).transform;
             Transform attachPoint = backpack.FindChild(attachPointName);
             UnityEngine.Object.Destroy(output.GetComponent<GearItem>());
             output.SetParent(attachPoint);
             output.Zero();
-            if (flag == "lamp")
+            if (flag == "lantern")
             {
                 Transform originalMesh = output.FindChild("KeroseneLampB");
                 Transform replacementMesh = backpack.GetParent().FindChild("Lantern_HandleUp");
@@ -50,63 +86,176 @@
                     replacementMesh.gameObject.SetActive(true);
                 }
             }
-            //MelonLogger.Msg("Set up " + gear + " " + attachPointName);
-            return output; 
+            usedAttachPoints.Add(attachPointName);
+            if (Settings.options.backPackDebug) {
+                MelonLogger.Msg("Set up " + gear + " " + attachPointName + " " + flag);
+            }
+            return true;
         }
         public override void OnUpdate()
         {
-
             if (InputManager.GetKeyDown(InputManager.m_CurrentContext, KeyCode.B))
             {
-                HUDMessage.AddMessage("Spawning backpack", true, true);
+                if (Settings.options.backPackDebug)
+                {
+                    MelonLogger.Msg("backpack state " + backpackPlaced);
+                }
 
-                Transform player = GameManager.GetPlayerTransform();
-                backpack = GameObject.Instantiate(backpackBundle.LoadAsset<GameObject>("backpackWithAttachPoints")).transform;
-                backpack = backpack.GetChild(0);
-                backpack.name = "[CunningSurvivor]Backpack";
-                backpack.position = player.position;
-                //backpack.gameObject.AddComponent<GearItem>();
-                backpack.gameObject.GetComponent<MeshRenderer>().materials[0].shader = vanillaSkinnedShader;
-                backpack.gameObject.GetComponent<MeshRenderer>().materials[1].shader = vanillaSkinnedShader;
-                backpack.gameObject.GetComponent<MeshRenderer>().materials[2].shader = vanillaSkinnedShader;
+                if (backpackPlaced == false)
+                {
+                    backpackPlaced = true;
+                    PlaceBackpack();
+                    PopulateBackpack();
+                    return;
+                }
 
-                PrepareGear("GEAR_BearSkinBedRoll", "attachPoint_bedroll");
-                PrepareGear("GEAR_BedRoll", "attachPoint_bedroll");
-                PrepareGear("GEAR_Bow", "attachPoint_bow");
-                PrepareGear("GEAR_RecycledCan", "attachPoint_can");
-                PrepareGear("GEAR_BlueFlare", "attachPoint_flareBlue");
-                PrepareGear("GEAR_FlareA", "attachPoint_flareRed");
-                PrepareGear("GEAR_Flashlight", "attachPoint_flashlight");
-                PrepareGear("GEAR_Hatchet", "attachPoint_hatchet");
-                PrepareGear("GEAR_HatchetImprovised", "attachPoint_hatchet");
-                PrepareGear("GEAR_KeroseneLampB", "attachPoint_lantern", "lamp");
-                PrepareGear("GEAR_CookingPot", "attachPoint_pot");
-                PrepareGear("GEAR_Prybar", "attachPoint_prybar");
-                PrepareGear("GEAR_Rope", "attachPoint_rope");
-                PrepareGear("GEAR_SprayPaintCan", "attachPoint_sprayCan");
-                PrepareGear("GEAR_Torch", "attachPoint_torch");
-                PrepareGear("GEAR_Arrow", "attachPoint_arrow1");
-                PrepareGear("GEAR_Arrow", "attachPoint_arrow2");
-                PrepareGear("GEAR_Arrow", "attachPoint_arrow3");
-
+                if (backpackPlaced == true)
+                {
+                    backpackPlaced = false;
+                    UnpopulateBackpack();
+                    PickupBackpack();
+                    return;
+                }
             }
         }
 
-        public static void ChangeTex(string variant)
+        public static void PlaceBackpack()
         {
-            if (variant == "astrid")
+            HUDMessage.AddMessage("Backpack Placed", true, true);
+            Transform player = GameManager.GetPlayerTransform();
+            backpackInst = GameObject.Instantiate(backpackBundle.LoadAsset<GameObject>("backpackWithAttachPoints")).transform;
+            backpack = backpackInst.GetChild(0);
+            backpack.name = "[CunningSurvivor]Backpack";
+            backpack.position = player.position;
+            //backpack.RotateAround(Vector3.leftVector, 0);
+
+            backpackInst.gameObject.AddComponent<ObjectGuid>();
+            backpackInst.GetComponent<ObjectGuid>().m_Guid = Guid.NewGuid().ToString();
+
+            backpack.gameObject.GetComponent<MeshRenderer>().materials[0].shader = vanillaSkinnedShader;
+            backpack.gameObject.GetComponent<MeshRenderer>().materials[1].shader = vanillaSkinnedShader;
+            backpack.gameObject.GetComponent<MeshRenderer>().materials[2].shader = vanillaSkinnedShader;
+
+            
+            // Will variant
+            if (Settings.options.backPackVariant == 1)
+            {
+                backpack.gameObject.GetComponent<MeshRenderer>().materials[0].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/mainW.png");
+                backpack.gameObject.GetComponent<MeshRenderer>().materials[1].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/backW.png");
+                backpack.gameObject.GetComponent<MeshRenderer>().materials[2].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/detailW.png");
+            }
+            // Astrid variant
+            if (Settings.options.backPackVariant == 2)
             {
                 backpack.gameObject.GetComponent<MeshRenderer>().materials[0].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/mainA.png");
                 backpack.gameObject.GetComponent<MeshRenderer>().materials[1].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/backA.png");
                 backpack.gameObject.GetComponent<MeshRenderer>().materials[2].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/detailA.png");
             }
 
-            if (variant == "will")
+            if (Settings.options.backPackDebug)
             {
-                backpack.gameObject.GetComponent<MeshRenderer>().materials[0].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/mainW.png");
-                backpack.gameObject.GetComponent<MeshRenderer>().materials[1].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/backW.png");
-                backpack.gameObject.GetComponent<MeshRenderer>().materials[2].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/detailW.png");
+                MelonLogger.Msg("Backpack Placed | GUID | " + backpackInst.GetComponent<ObjectGuid>().m_Guid);
             }
+        }
+
+        public static void PickupBackpack()
+        {
+            HUDMessage.AddMessage("Backpack Picked Up", true, true);
+            GameManager.Destroy(backpack.gameObject);
+            GameManager.Destroy(backpackInst.gameObject);
+            usedAttachPoints.Clear();
+            if (Settings.options.backPackDebug)
+            {
+                MelonLogger.Msg("Backpack Picked Up");
+            }
+        }
+
+        public static void PopulateBackpack()
+        {
+
+            foreach (KeyValuePair<String, String> item in attachGearItems)
+            {
+                int GearItemCount = 1;
+                String GearItemName = item.Key;
+
+                if (item.Key.Split("|").Length == 2)
+                {
+                    GearItemCount = Int32.Parse(item.Key.Split("|")[1]);
+                    GearItemName = item.Key.Split("|")[0];
+                }
+
+                String attachPoint = item.Value;
+                String flag = item.Value.Split('_')[1];
+
+                if (GearItemCount > 1)
+                {
+                    for (int i = 1; i <= GearItemCount; i++)
+                    {
+                        GearItem? GearItemObject = PlayerHasGearItem(GearItemName, i);
+                        if (GearItemObject != null || !Settings.options.backPackCheckInv)
+                        {
+                            AttachGearItem(GearItemName, attachPoint + i, flag);
+                            // hide/remove item from inventory here
+                        }
+                    }
+                }
+                else
+                {
+                    GearItem? GearItemObject = PlayerHasGearItem(GearItemName, GearItemCount);
+                    if (GearItemObject != null || !Settings.options.backPackCheckInv)
+                    {
+                        AttachGearItem(GearItemName, attachPoint, flag);
+                        // hide/remove item from inventory here
+                    }
+
+                }
+
+            }
+
+        }
+
+        public static void UnpopulateBackpack()
+        {
+
+            foreach (GearItem GearItemObject in GameManager.GetInventoryComponent().m_Items)
+            {
+                // show/add item to inventory here
+            }
+        }
+
+        public static GearItem? PlayerHasGearItem(String GearItemName, int MinItemCount = 1)
+        {
+            GearItem GearItemObject = GameManager.GetInventoryComponent().GearInInventory(GearItemName, MinItemCount);
+            if (GearItemObject && GearItemObject.gameObject && !GearItemObject.IsWornOut())
+            {
+                if (
+                    !GearItemObject.IsLitFlare() &&
+                    !GearItemObject.IsLitFlashlight() &&
+                    !GearItemObject.IsLitLamp() &&
+                    !GearItemObject.IsLitLightsource() &&
+                    !GearItemObject.IsLitMatch() &&
+                    !GearItemObject.IsLitNoiseMaker() &&
+                    !GearItemObject.IsLitTorch()
+                    )
+                {
+                    if (Settings.options.backPackDebug)
+                    {
+                        MelonLogger.Msg("Player has item " + GearItemObject.name);
+                    }
+                    return GearItemObject;
+                } else
+                {
+                    if (Settings.options.backPackDebug)
+                    {
+                        MelonLogger.Msg("Player has item BUT is lit" + GearItemObject.name);
+                    }
+                }
+            }
+            if (Settings.options.backPackDebug)
+            {
+                MelonLogger.Msg("Player does not have item " + GearItemName);
+            }
+            return null;
         }
     }
 }

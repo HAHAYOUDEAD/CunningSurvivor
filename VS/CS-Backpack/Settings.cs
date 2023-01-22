@@ -25,37 +25,15 @@ namespace CunningSurvivor
 
         [Name("Variant")]
         [Description("Choose how your backpack looks")]
-        [Choice(new string[]
-        {
-            "Based on current character",
-            "Will",
-            "Astrid"
-        })]
-        public int backPackVariant;
+        [Choice("Based on current character", "Will", "Astrid")]
+        public int backPackVariant = 0;
 
+        [Name("Check Inventory Items")]
+        [Description("Don't check for player has items in inventory")]
+        public bool backPackCheckInv = true;
 
-
-        protected override void OnConfirm()
-        {
-            switch (Settings.options.backPackVariant)
-            { 
-                case 0:
-                    {
-                        break;
-                    }
-                case 1:
-                    {
-                        BPMain.ChangeTex("will");
-                        break;
-                    }
-                case 2:
-                    {
-                        BPMain.ChangeTex("astrid");
-                        break;
-                    }   
-            }
-
-            base.OnConfirm();
-        }
+        [Name("Debug Output")]
+        [Description("Output debug messages")]
+        public bool backPackDebug = false;
     }
 }
