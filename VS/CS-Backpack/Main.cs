@@ -63,7 +63,7 @@ namespace CunningSurvivor
                 {
                     MelonLogger.Msg("Attach point already used " + attachPointName);
                 }
-                    return false;
+                return false;
             }
 
             Transform output = GearItem.InstantiateGearItem(gear).transform;
@@ -87,13 +87,16 @@ namespace CunningSurvivor
                 }
             }
             usedAttachPoints.Add(attachPointName);
-            if (Settings.options.backPackDebug) {
+            if (Settings.options.backPackDebug)
+            {
                 MelonLogger.Msg("Set up " + gear + " " + attachPointName + " " + flag);
             }
             return true;
         }
         public override void OnUpdate()
         {
+            // temp proximity check keybind
+            // replace with inventory interaction/button
             if (InputManager.GetKeyDown(InputManager.m_CurrentContext, KeyCode.B))
             {
                 if (Settings.options.backPackDebug)
@@ -117,6 +120,25 @@ namespace CunningSurvivor
                     return;
                 }
             }
+            // temp proximity check keybind
+            if (InputManager.GetKeyDown(InputManager.m_CurrentContext, KeyCode.V))
+            {
+                if (Settings.options.backPackDebug)
+                {
+                    MelonLogger.Msg("backpack state " + backpackPlaced);
+                }
+
+                if (backpackPlaced == false)
+                {
+                    HUDMessage.AddMessage("No backpack placed", true, true);
+                    return;
+                }
+                if (backpackPlaced == true)
+                {
+                    IsBackpackInRange();
+                    return;
+                }
+            }
         }
 
         public static void PlaceBackpack()
@@ -136,7 +158,7 @@ namespace CunningSurvivor
             backpack.gameObject.GetComponent<MeshRenderer>().materials[1].shader = vanillaSkinnedShader;
             backpack.gameObject.GetComponent<MeshRenderer>().materials[2].shader = vanillaSkinnedShader;
 
-            
+
             // Will variant
             if (Settings.options.backPackVariant == 1)
             {
@@ -243,7 +265,8 @@ namespace CunningSurvivor
                         MelonLogger.Msg("Player has item " + GearItemObject.name);
                     }
                     return GearItemObject;
-                } else
+                }
+                else
                 {
                     if (Settings.options.backPackDebug)
                     {
@@ -256,6 +279,38 @@ namespace CunningSurvivor
                 MelonLogger.Msg("Player does not have item " + GearItemName);
             }
             return null;
+        }
+
+        public static float? GetBackpackDistance()
+        {
+            if (backpackPlaced == false)
+            {
+                return null;
+            }
+            float distance = Utils.DistanceToMainCamera(backpack.position);
+            if (Settings.options.backPackDebug)
+            {
+                MelonLogger.Msg("Backpack distance " + distance + " required " + Settings.options.backPackMinDistance);
+            }
+            return distance;
+        }
+
+        public static bool IsBackpackInRange()
+        {
+            if (backpackPlaced == true)
+            {
+                float? distance = GetBackpackDistance();
+                if (distance != null && distance <= Settings.options.backPackMinDistance)
+                {
+                    if (Settings.options.backPackDebug)
+                    {
+                        MelonLogger.Msg("Backpack IN range");
+                    }
+                    return true;
+                }
+            }
+            MelonLogger.Msg("Backpack NOT in range");
+            return false;
         }
     }
 }

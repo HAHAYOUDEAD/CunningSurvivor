@@ -28,11 +28,18 @@ namespace CunningSurvivor
         [Choice("Based on current character", "Will", "Astrid")]
         public int backPackVariant = 0;
 
+        [Name("Minimum backpack distance")]
+        [Description("Adjust the minimum distance required for backpack interactions")]
+        [Slider(1f, 50f)]
+        public float backPackMinDistance = 3f;
+
+        [Section("DEBUG")]
+
         [Name("Check Inventory Items")]
         [Description("Don't check for player has items in inventory")]
         public bool backPackCheckInv = true;
 
-        [Name("Debug Output")]
+        [Name("Output")]
         [Description("Output debug messages")]
         public bool backPackDebug = false;
     }
