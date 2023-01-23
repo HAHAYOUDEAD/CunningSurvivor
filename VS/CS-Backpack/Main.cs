@@ -11,11 +11,15 @@ namespace CunningSurvivor
 
         public static AssetBundle backpackBundle;
 
-        private static Transform backpackInst;
+        private static GameObject backpackInst;
         private static Transform backpack;
         private static bool backpackPlaced { get; set; } = false;
+        private static bool backpackPlacing { get; set; } = false;
 
         private static List<String> usedAttachPoints = new List<String>();
+
+        private static Container backpackContainer;
+        private static ContainerInteraction backpackContainerInteraction;
 
 
         public static readonly string modFolderName = "cunningSurvivor/backpack/";
@@ -41,6 +45,51 @@ namespace CunningSurvivor
             { "GEAR_Arrow|3", "attachPoint_arrow" }
         };
 
+        [HarmonyPatch(typeof(SaveGameSystem), nameof(SaveGameSystem.LoadSceneData), new Type[] { typeof(string), typeof(string) })]
+        private static class SaveGameSystem_LoadSceneData
+        {
+            private static void Postfix(string name, string sceneSaveName)
+            {
+                MelonLogger.Msg("SaveGameSystem_LoadSceneData (" + name + "|" + sceneSaveName + ")");
+
+            }
+        }
+        [HarmonyPatch(typeof(SaveGameSystem), nameof(SaveGameSystem.SaveSceneData), new Type[] { typeof(SlotData), typeof(string) })]
+        private static class SaveGameSystem_SaveSceneData
+        {
+            private static void Postfix(SlotData slot, string sceneSaveName)
+            {
+                PickupBackpack(true);
+                MelonLogger.Msg("SaveGameSystem_SaveSceneData (" + slot.m_DisplayName + "|" + sceneSaveName + ")");
+
+            }
+        }
+        [HarmonyPatch(typeof(PlayerManager), nameof(PlayerManager.CancelPlaceMesh))]
+        private static class PlayerManager_CancelPlaceMesh
+        {
+            private static void Postfix()
+            {
+                if (backpackPlacing == true)
+                {
+                    MelonLogger.Msg("PlayerManager_CancelPlaceMesh");
+                    PickupBackpack(true);
+                    backpackPlacing = false;
+                }
+
+            }
+        }
+        [HarmonyPatch(typeof(PlayerManager), nameof(PlayerManager.AttemptToPlaceMesh))]
+        private static class PlayerManager_AttemptToPlaceMesh
+        {
+            private static void Postfix()
+            {
+                if (backpackPlacing == true)
+                {
+                    PlaceBackpackComplete();
+                }
+
+            }
+        }
 
         public override void OnInitializeMelon()
         {
@@ -53,6 +102,8 @@ namespace CunningSurvivor
 
             // Enable settings
             Settings.OnLoad();
+
+
         }
 
         private static bool AttachGearItem(string gear, string attachPointName, string flag = "")
@@ -99,6 +150,16 @@ namespace CunningSurvivor
             // replace with inventory interaction/button
             if (InputManager.GetKeyDown(InputManager.m_CurrentContext, KeyCode.B))
             {
+
+                if (InterfaceManager.GetInstance().AnyOverlayPanelEnabled())
+                {
+                    if (Settings.options.backPackDebug)
+                    {
+                        MelonLogger.Msg("! Overlay/Panel open");
+                    }
+                    return;
+                }
+
                 if (Settings.options.backPackDebug)
                 {
                     MelonLogger.Msg("backpack state " + backpackPlaced);
@@ -106,16 +167,12 @@ namespace CunningSurvivor
 
                 if (backpackPlaced == false)
                 {
-                    backpackPlaced = true;
-                    PlaceBackpack();
-                    PopulateBackpack();
+                    PlaceBackpackStart();
                     return;
                 }
 
                 if (backpackPlaced == true)
                 {
-                    backpackPlaced = false;
-                    UnpopulateBackpack();
                     PickupBackpack();
                     return;
                 }
@@ -123,6 +180,17 @@ namespace CunningSurvivor
             // temp proximity check keybind
             if (InputManager.GetKeyDown(InputManager.m_CurrentContext, KeyCode.V))
             {
+                if (InterfaceManager.GetInstance().AnyOverlayPanelEnabled())
+                {
+                    if (Settings.options.backPackDebug)
+                    {
+                        MelonLogger.Msg("! Overlay/Panel open");
+                    }
+                    return;
+                }
+
+                MelonLogger.Msg("m_Containers " + ContainerManager.m_Containers.Count);
+
                 if (Settings.options.backPackDebug)
                 {
                     MelonLogger.Msg("backpack state " + backpackPlaced);
@@ -141,23 +209,41 @@ namespace CunningSurvivor
             }
         }
 
-        public static void PlaceBackpack()
+        public static void PlaceBackpackStart()
         {
-            HUDMessage.AddMessage("Backpack Placed", true, true);
+            backpackPlacing = true;
+
             Transform player = GameManager.GetPlayerTransform();
-            backpackInst = GameObject.Instantiate(backpackBundle.LoadAsset<GameObject>("backpackWithAttachPoints")).transform;
-            backpack = backpackInst.GetChild(0);
+            backpackInst = GameObject.Instantiate(backpackBundle.LoadAsset<GameObject>("backpackWithAttachPoints"));
+            //backpackInst.AddComponent<MeshFilter>();
+            //backpackInst.AddComponent<BoxCollider>();
+            //backpackInst.AddComponent<MeshCollider>();
+            backpack = GameManager.Instantiate<Transform>(backpackInst.transform.GetChild(0));
+            //backpack.gameObject.transform.rotation.Set(270f, 90f, backpack.gameObject.transform.rotation.z, backpack.gameObject.transform.rotation.w);
+            //backpack.SetPositionAndRotation(player.position, player.rotation);
+            GameManager.Destroy(backpackInst);
             backpack.name = "[CunningSurvivor]Backpack";
-            backpack.position = player.position;
+            //backpack.position = player.position;
+            //backpackInst.gameObject.AddComponent<BoxCollider>();
             //backpack.RotateAround(Vector3.leftVector, 0);
 
-            backpackInst.gameObject.AddComponent<ObjectGuid>();
-            backpackInst.GetComponent<ObjectGuid>().m_Guid = Guid.NewGuid().ToString();
+            backpackContainer = backpack.gameObject.AddComponent<Container>();
+            backpackContainer.m_Items.Clear();
+            backpackContainer.m_CapacityKG = 30;
+            backpackContainer.m_LocalizedDisplayName = null;
+            backpackContainer.name = "[CunningSurvivor]Backpack";
+            backpackContainer.m_Inspected = true;
+            backpackContainerInteraction = backpack.gameObject.AddComponent<ContainerInteraction>();
+            backpackContainerInteraction.Start();
+            backpackContainerInteraction.HoldText = "Open Backpack";
+            backpackContainerInteraction._HoldText_k__BackingField = "Open Backpack";
+
+            backpack.gameObject.AddComponent<ObjectGuid>();
+            backpack.gameObject.GetComponent<ObjectGuid>().m_Guid = Guid.NewGuid().ToString();
 
             backpack.gameObject.GetComponent<MeshRenderer>().materials[0].shader = vanillaSkinnedShader;
             backpack.gameObject.GetComponent<MeshRenderer>().materials[1].shader = vanillaSkinnedShader;
             backpack.gameObject.GetComponent<MeshRenderer>().materials[2].shader = vanillaSkinnedShader;
-
 
             // Will variant
             if (Settings.options.backPackVariant == 1)
@@ -174,27 +260,70 @@ namespace CunningSurvivor
                 backpack.gameObject.GetComponent<MeshRenderer>().materials[2].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/detailA.png");
             }
 
+            // attach the gear to the backpack before placing mesh
+            // for visual appearance
+            attachBackpackGear();
+
+
+            GameManager.GetPlayerManagerComponent().StartPlaceMesh(backpack.gameObject, PlaceMeshFlags.None);
+            GameManager.GetPlayerManagerComponent().m_RotationAngle = backpack.gameObject.transform.localEulerAngles.y;
+
             if (Settings.options.backPackDebug)
             {
-                MelonLogger.Msg("Backpack Placed | GUID | " + backpackInst.GetComponent<ObjectGuid>().m_Guid);
+                MelonLogger.Msg("Placing backpack");
+            }
+
+
+        }
+
+        public static void PlaceBackpackComplete()
+        {
+            if (Settings.options.backPackDebug)
+            {
+                MelonLogger.Msg("Backpack Placed 1 | GUID | " + backpack.gameObject.GetComponent<ObjectGuid>().m_Guid);
+            }
+            backpackPlaced = true;
+            backpackPlacing = false;
+            HUDMessage.AddMessage("Backpack Placed", true, true);
+
+            // TODO
+            PopulateBackpack();
+
+
+        }
+
+        public static void PickupBackpack(bool force = false)
+        {
+            if (force == false)
+            {
+                if (!IsBackpackInRange())
+                {
+                    HUDMessage.AddMessage("Backpack too far away", true, true);
+                    return;
+                }
+            }
+            if (backpackPlaced == true || backpackPlacing == true)
+            {
+                // TODO
+                UnpopulateBackpack();
+
+                if (force == false)
+                {
+                    HUDMessage.AddMessage("Backpack Picked Up", true, true);
+                }
+                GameManager.Destroy(backpack.gameObject);
+                usedAttachPoints.Clear();
+                if (Settings.options.backPackDebug)
+                {
+                    MelonLogger.Msg("Backpack Picked Up | forced " + force);
+                }
+                backpackPlaced = false;
             }
         }
 
-        public static void PickupBackpack()
-        {
-            HUDMessage.AddMessage("Backpack Picked Up", true, true);
-            GameManager.Destroy(backpack.gameObject);
-            GameManager.Destroy(backpackInst.gameObject);
-            usedAttachPoints.Clear();
-            if (Settings.options.backPackDebug)
-            {
-                MelonLogger.Msg("Backpack Picked Up");
-            }
-        }
 
-        public static void PopulateBackpack()
+        public static void attachBackpackGear()
         {
-
             foreach (KeyValuePair<String, String> item in attachGearItems)
             {
                 int GearItemCount = 1;
@@ -233,6 +362,11 @@ namespace CunningSurvivor
                 }
 
             }
+        }
+        public static void PopulateBackpack()
+        {
+
+
 
         }
 
