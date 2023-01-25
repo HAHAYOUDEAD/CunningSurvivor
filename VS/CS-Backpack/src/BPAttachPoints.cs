@@ -56,10 +56,7 @@
         {
             if (UsedAttachPoints.Contains(attachPointName))
             {
-                if (Settings.options.backPackDebug)
-                {
-                    MelonLogger.Msg("Attach point already used " + attachPointName);
-                }
+                BPMain.DebugMsg("Attach point already used " + attachPointName);
                 return false;
             }
 
@@ -84,10 +81,8 @@
                 }
             }
             UsedAttachPoints.Add(attachPointName);
-            if (Settings.options.backPackDebug)
-            {
-                MelonLogger.Msg("Set up " + gear + " " + attachPointName + " " + flag);
-            }
+            BPMain.DebugMsg("Set up " + gear + " " + attachPointName + " " + flag);
+            
             return true;
         }
 

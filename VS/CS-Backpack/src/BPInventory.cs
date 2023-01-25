@@ -18,24 +18,16 @@
                     !GearItemObject.IsLitTorch()
                     )
                 {
-                    if (Settings.options.backPackDebug)
-                    {
-                        MelonLogger.Msg("Player has item " + GearItemObject.name);
-                    }
+                    BPMain.DebugMsg("Player has item " + GearItemObject.name);
                     return GearItemObject;
                 }
                 else
                 {
-                    if (Settings.options.backPackDebug)
-                    {
-                        MelonLogger.Msg("Player has item BUT is lit" + GearItemObject.name);
-                    }
+                    BPMain.DebugMsg("Player has item BUT is lit" + GearItemObject.name);
                 }
             }
-            if (Settings.options.backPackDebug)
-            {
-                MelonLogger.Msg("Player does not have item " + GearItemName);
-            }
+            BPMain.DebugMsg("Player does not have item " + GearItemName);
+
             return null;
         }
 
