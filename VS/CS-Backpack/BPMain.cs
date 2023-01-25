@@ -39,7 +39,7 @@ namespace CunningSurvivor
             { "GEAR_Torch", "attachPoint_torch" },
             { "GEAR_Arrow|3", "attachPoint_arrow" }
         };
-
+        // item to keep, quantity
         public static Dictionary<String, int> ItemsPlayerKeeps = new()
         {
             { "GEAR_WoodMatches", 6 },
@@ -51,10 +51,11 @@ namespace CunningSurvivor
             { "GEAR_BottlePainKillers", 6 }
 
         };
-        public static Dictionary<String, string> ItemsPlayerKeepsPriority = new()
+        // lower prioeity item, higher priority item
+        public static Dictionary<String, String> ItemsPlayerKeepsPriority = new()
         {
-            { "GEAR_WoodMatches", "GEAR_PackMatches" },
-            { "GEAR_Knife", "GEAR_KnifeImprovised" }
+            { "GEAR_PackMatches", "GEAR_WoodMatches" },
+            { "GEAR_KnifeImprovised", "GEAR_Knife" }
         };
 
         [HarmonyPatch(typeof(SaveGameSystem), nameof(SaveGameSystem.LoadSceneData), new Type[] { typeof(string), typeof(string) })]

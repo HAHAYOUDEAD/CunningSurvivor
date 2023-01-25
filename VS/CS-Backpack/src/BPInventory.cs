@@ -1,5 +1,7 @@
-﻿using Il2Cpp;
+﻿using Harmony;
+using Il2Cpp;
 using Il2CppTLD.Gear;
+using System.Linq;
 
 namespace CunningSurvivor
 {
@@ -81,8 +83,11 @@ namespace CunningSurvivor
         public static void PopulateBackpack()
         {
             List<GearItem> itemsToMove = new();
+            List<String> playerHeld = new();
+            List<String> movedItems = new();
             foreach (GearItemObject GearItemObj in GameManager.GetInventoryComponent().m_Items)
             {
+                playerHeld.Add(GearItemObj.m_GearItem.name);
                 if (GearItemObj.m_GearItem.m_ClothingItem)
                 {
                     if (!GearItemObj.m_GearItem.m_ClothingItem.IsWearing())
@@ -106,6 +111,20 @@ namespace CunningSurvivor
                 {
                     quantity -= BPMain.ItemsPlayerKeeps[moveItem.name];
                 }
+                if (
+                    movedItems.Contains(moveItem.name) ||
+                    (BPMain.ItemsPlayerKeepsPriority.ContainsKey(moveItem.name) && playerHeld.Contains(BPMain.ItemsPlayerKeepsPriority[moveItem.name]))
+                    )
+                {
+                    if (moveItem.m_StackableItem)
+                    {
+                        quantity = moveItem.m_StackableItem.m_Units;
+                    } else
+                    {
+                        quantity = 1;
+                    }
+                }
+                movedItems.Add(moveItem.name);
                 BPMain.DebugMsg("Item moved to backpack | " + moveItem.name + " (" + moveItem.GetNormalizedCondition() * 100 + "%) | " + quantity);
                 MoveFromPlayerToBackpack(moveItem, quantity);
             }
