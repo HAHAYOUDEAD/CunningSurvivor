@@ -216,7 +216,7 @@ namespace CunningSurvivor
             BackpackContainer.m_Items.Clear();
             BackpackContainer.m_CapacityKG = BackpackAddCarryCapacity;
             BackpackContainer.m_LocalizedDisplayName = null;
-            BackpackContainer.name = "Backpack";
+            BackpackContainer.name = "CS_CONTAINER_Backpack";
             BackpackContainer.m_Inspected = true;
             BackpackContainerInteraction = BackpackInst.gameObject.AddComponent<ContainerInteraction>();
             BackpackContainerInteraction.Start();
