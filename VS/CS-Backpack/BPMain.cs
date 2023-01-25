@@ -20,7 +20,8 @@ namespace CunningSurvivor
         public static readonly string bundleName = "bundlebackpack";
         public static readonly string storedDataFolderName = "Assets/LooseFiles/";
 
-        public static Dictionary<String, String> AttachableGearItems = new Dictionary<String, String>() {
+        public static Dictionary<String, String> AttachableGearItems = new()
+        {
             { "GEAR_BearSkinBedRoll", "attachPoint_bedroll" },
             { "GEAR_BedRoll", "attachPoint_bedroll" },
             { "GEAR_Bow", "attachPoint_bow" },
@@ -39,22 +40,39 @@ namespace CunningSurvivor
             { "GEAR_Arrow|3", "attachPoint_arrow" }
         };
 
+        public static Dictionary<String, int> ItemsPlayerKeeps = new()
+        {
+            { "GEAR_WoodMatches", 6 },
+            { "GEAR_PackMatches", 6 },
+            { "GEAR_Knife", 1 },
+            { "GEAR_KnifeImprovised", 1 },
+            { "GEAR_Rifle", 1 },
+            { "GEAR_HeavyBandage", 1 },
+            { "GEAR_BottlePainKillers", 6 }
+
+        };
+        public static Dictionary<String, string> ItemsPlayerKeepsPriority = new()
+        {
+            { "GEAR_WoodMatches", "GEAR_PackMatches" },
+            { "GEAR_Knife", "GEAR_KnifeImprovised" }
+        };
+
         [HarmonyPatch(typeof(SaveGameSystem), nameof(SaveGameSystem.LoadSceneData), new Type[] { typeof(string), typeof(string) })]
         private static class SaveGameSystem_LoadSceneData
         {
             private static void Postfix(string name, string sceneSaveName)
             {
-                MelonLogger.Msg("SaveGameSystem_LoadSceneData (" + name + "|" + sceneSaveName + ")");
+                DebugMsg("SaveGameSystem_LoadSceneData (" + name + "|" + sceneSaveName + ")");
 
             }
         }
-        [HarmonyPatch(typeof(SaveGameSystem), nameof(SaveGameSystem.SaveSceneData), new Type[] { typeof(SlotData), typeof(string) })]
-        private static class SaveGameSystem_SaveSceneData
+        [HarmonyPatch(typeof(SaveGameSystem), nameof(SaveGameSystem.SaveGame), new Type[] { typeof(string), typeof(string) })]
+        private static class SaveGameSystem_SaveGame
         {
-            private static void Postfix(SlotData slot, string sceneSaveName)
+            private static void Prefix(string name, string sceneSaveName)
             {
                 PickupBackpack(true);
-                MelonLogger.Msg("SaveGameSystem_SaveSceneData (" + slot.m_DisplayName + "|" + sceneSaveName + ")");
+                DebugMsg("SaveGameSystem_SaveGame (" + name + "|" + sceneSaveName + ")");
 
             }
         }
@@ -65,7 +83,7 @@ namespace CunningSurvivor
             {
                 if (BackpackPlacing == true)
                 {
-                    MelonLogger.Msg("PlayerManager_CancelPlaceMesh");
+                    DebugMsg("PlayerManager_CancelPlaceMesh");
                     PickupBackpack(true);
                     BackpackPlacing = false;
                 }
@@ -79,12 +97,10 @@ namespace CunningSurvivor
             {
                 if (!__instance.m_ObjectToPlace)
                 {
-                    //MelonLogger.Msg("PlayerManager_AttemptToPlaceMesh - !m_ObjectToPlace");
                     return;
                 }
                 if (!__instance.CanPlaceCurrentPlaceable())
                 {
-                    //MelonLogger.Msg("PlayerManager_AttemptToPlaceMesh - !CanPlaceCurrentPlaceable");
                     return;
                 }
 
@@ -132,7 +148,7 @@ namespace CunningSurvivor
                 }
 
                 DebugMsg("backpack state " + BackpackPlaced);
-                
+
 
                 if (BackpackPlaced == false)
                 {
@@ -198,6 +214,8 @@ namespace CunningSurvivor
             BackpackInst.gameObject.AddComponent<ObjectGuid>();
             BackpackInst.gameObject.GetComponent<ObjectGuid>().m_Guid = Guid.NewGuid().ToString();
 
+            ContainerManager.m_Containers.Add(BackpackContainer);
+
             Backpack.gameObject.GetComponent<MeshRenderer>().materials[0].shader = vanillaSkinnedShader;
             Backpack.gameObject.GetComponent<MeshRenderer>().materials[1].shader = vanillaSkinnedShader;
             Backpack.gameObject.GetComponent<MeshRenderer>().materials[2].shader = vanillaSkinnedShader;
@@ -219,8 +237,9 @@ namespace CunningSurvivor
 
             // attach the gear to the backpack before placing mesh
             // for visual appearance
-            // populate on PlaceBackpackComplete()
             BPAttachPoints.AttachBackpackGear();
+            // populate the backpack
+            BPInventory.PopulateBackpack();
 
 
             GameManager.GetPlayerManagerComponent().StartPlaceMesh(BackpackInst.gameObject, PlaceMeshFlags.None);
@@ -237,9 +256,6 @@ namespace CunningSurvivor
             BackpackPlaced = true;
             BackpackPlacing = false;
             HUDMessage.AddMessage("Backpack Placed", 1, true, true);
-
-            // TODO
-            BPInventory.PopulateBackpack();
 
 
         }
