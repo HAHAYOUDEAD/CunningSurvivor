@@ -1,9 +1,4 @@
-﻿using Harmony;
-using Il2Cpp;
-using Il2CppTLD.Gear;
-using System.Linq;
-
-namespace CunningSurvivor
+﻿namespace CunningSurvivor
 {
     internal static class BPInventory
     {
