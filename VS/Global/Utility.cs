@@ -12,6 +12,14 @@
             return !(string.IsNullOrEmpty(scene) || scene.Contains("MainMenu") || scene == "Boot" || scene == "Empty");
         }
 
+        public static GameObject GetObjectUnderCrosshair()
+        {
+            float maxPickupRange = GameManager.GetGlobalParameters().m_MaxPickupRange;
+            float maxRange = GameManager.GetPlayerManagerComponent().ComputeModifiedPickupRange(maxPickupRange);
+            GameObject ItemUnderCrosshair = GameManager.GetPlayerManagerComponent().GetInteractiveObjectUnderCrosshairs(maxRange);
+            return ItemUnderCrosshair;
+        }
+
 
     }
 

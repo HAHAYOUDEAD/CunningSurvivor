@@ -16,7 +16,7 @@ namespace CunningSurvivor
         public static ContainerInteraction backpackInteraction;
 
         public static float carryCapacityBase = 5f;
-        public static float BackpackAddCarryCapacity = 35f;
+        public static float backpackAddCarryCapacity = 35f;
 
         public static readonly string modFolderName = "cunningSurvivor/backpack/";
         public static readonly string bundleName = "bundlebackpack";
@@ -72,7 +72,7 @@ namespace CunningSurvivor
                 }
                 else
                 {
-                    GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = carryCapacityBase + BackpackAddCarryCapacity;
+                    GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = carryCapacityBase + backpackAddCarryCapacity;
                 }
 
             }
@@ -240,15 +240,7 @@ namespace CunningSurvivor
             //Backpack.gameObject.AddComponent<BoxCollider>();
 
             
-            backpackInst.gameObject.AddComponent<Container>();
-            backpackContainer = backpackInst.GetComponent<Container>();
-            backpackContainer.Start();
-            backpackContainer.m_Inspected = true;
-            backpackContainer.m_NotPopulated = false;
-            backpackContainer.m_GearToInstantiate.Clear();
-            backpackContainer.m_Items.Clear();
-            backpackContainer.m_CapacityKG = BackpackAddCarryCapacity;
-            backpackContainer.m_LocalizedDisplayName = null;
+            BPInventory.InitBackpackContainer();
 
             backpackInst.gameObject.AddComponent<ContainerInteraction>();
             backpackInteraction = backpackInst.GetComponent<ContainerInteraction>();
@@ -262,11 +254,6 @@ namespace CunningSurvivor
             //BackpackInteraction.Start();
             //BackpackInteraction.HoldText = "Open Backpack";
             //BackpackInteraction._HoldText_k__BackingField = "Open Backpack";
-
-            backpackInst.gameObject.AddComponent<ObjectGuid>();
-            backpackInst.gameObject.GetComponent<ObjectGuid>().m_Guid = Guid.NewGuid().ToString();
-
-            ContainerManager.m_Containers.Add(backpackContainer);
 
             backpack.gameObject.GetComponent<MeshRenderer>().materials[0].shader = vanillaSkinnedShader;
             backpack.gameObject.GetComponent<MeshRenderer>().materials[1].shader = vanillaSkinnedShader;
@@ -292,11 +279,11 @@ namespace CunningSurvivor
             BPAttachPoints.AttachBackpackGear();
             // populate the backpack
             BPInventory.PopulateBackpack();
-            GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = carryCapacityBase;
-
 
             GameManager.GetPlayerManagerComponent().StartPlaceMesh(backpackInst.gameObject, PlaceMeshFlags.None);
             GameManager.GetPlayerManagerComponent().m_RotationAngle = backpackInst.gameObject.transform.localEulerAngles.y;
+
+            GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = carryCapacityBase;
 
             DebugMsg("Placing backpack");
 
@@ -305,7 +292,6 @@ namespace CunningSurvivor
 
         public static void PlaceBackpackComplete()
         {
-            DebugMsg("Backpack Placed 1 | GUID | " + backpackInst.gameObject.GetComponent<ObjectGuid>().m_Guid);
             backpackPlaced = true;
             backpackPlacing = false;
             HUDMessage.AddMessage("Backpack Placed", 1, true, true);
@@ -326,18 +312,22 @@ namespace CunningSurvivor
             if (backpackPlaced == true || backpackPlacing == true)
             {
                 // TODO
+                GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = carryCapacityBase + backpackAddCarryCapacity;
                 BPInventory.UnpopulateBackpack();
 
                 if (force == false)
                 {
                     HUDMessage.AddMessage("Backpack Picked Up", 1f, true, true);
                 }
-                GameManager.Destroy(backpack.gameObject);
-                GameManager.Destroy(backpackInst.gameObject);
+														 
+															 
                 BPAttachPoints.Clear();
+                GameObject.Destroy(backpackInst.gameObject);
+                GameObject.Destroy(backpack.gameObject);
+                backpackContainer.DestroyAllGear();
                 DebugMsg("Backpack Picked Up | forced " + force);
                 backpackPlaced = false;
-                GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = carryCapacityBase + BackpackAddCarryCapacity;
+
             }
         }
 
