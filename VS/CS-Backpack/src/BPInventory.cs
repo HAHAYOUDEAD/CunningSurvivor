@@ -5,66 +5,66 @@ namespace CunningSurvivor
     internal static class BPInventory
     {
 
-        public static GearItem? PlayerHasGearItem(String GearItemName, int MinItemCount = 1)
+        public static GearItem? PlayerHasGearItem(String gearItemName, int minItemCount = 1)
         {
-            GearItem GearItemObj = GameManager.GetInventoryComponent().GearInInventory(GearItemName, MinItemCount);
-            if (GearItemObj && GearItemObj.gameObject && !GearItemObj.IsWornOut())
+            GearItem gearItemObj = GameManager.GetInventoryComponent().GearInInventory(gearItemName, minItemCount);
+            if (gearItemObj && gearItemObj.gameObject && !gearItemObj.IsWornOut())
             {
                 if (
-                    !GearItemObj.IsLitFlare() &&
-                    !GearItemObj.IsLitFlashlight() &&
-                    !GearItemObj.IsLitLamp() &&
-                    !GearItemObj.IsLitLightsource() &&
-                    !GearItemObj.IsLitMatch() &&
-                    !GearItemObj.IsLitNoiseMaker() &&
-                    !GearItemObj.IsLitTorch()
+                    !gearItemObj.IsLitFlare() &&
+                    !gearItemObj.IsLitFlashlight() &&
+                    !gearItemObj.IsLitLamp() &&
+                    !gearItemObj.IsLitLightsource() &&
+                    !gearItemObj.IsLitMatch() &&
+                    !gearItemObj.IsLitNoiseMaker() &&
+                    !gearItemObj.IsLitTorch()
                     )
                 {
-                    BPUtils.DebugMsg("Player has item " + GearItemObj.name);
-                    return GearItemObj;
+                    BPUtils.DebugMsg("Player has item " + gearItemObj.name);
+                    return gearItemObj;
                 }
                 else
                 {
-                    BPUtils.DebugMsg("Player has item BUT is lit" + GearItemObj.name);
+                    BPUtils.DebugMsg("Player has item BUT is lit" + gearItemObj.name);
                 }
             }
-            BPUtils.DebugMsg("Player does not have item " + GearItemName);
+            BPUtils.DebugMsg("Player does not have item " + gearItemName);
 
             return null;
         }
 
-        public static void MoveFromPlayerToBackpack(GearItem GearItemObj, int quantity)
+        public static void MoveFromPlayerToBackpack(GearItem gearItemObj, int quantity)
         {
             int unitsToKeep = 0;
-            if (GearItemObj.m_StackableItem)
+            if (gearItemObj.m_StackableItem)
             {
-                unitsToKeep = GearItemObj.m_StackableItem.m_Units - quantity;
+                unitsToKeep = gearItemObj.m_StackableItem.m_Units - quantity;
             }
-            string cloneText = GearItemObj.Serialize();
-            GearItem clone = GearItem.InstantiateGearItem(GearItemObj.name);
+            string cloneText = gearItemObj.Serialize();
+            GearItem clone = GearItem.InstantiateGearItem(gearItemObj.name);
             clone.Deserialize(cloneText);
             if (clone.m_StackableItem && clone.m_StackableItem.m_Units >= quantity)
             {
                 clone.m_StackableItem.m_Units = quantity;
             }
-            if (GearItemObj.m_StackableItem && unitsToKeep >= 1)
+            if (gearItemObj.m_StackableItem && unitsToKeep >= 1)
             {
-                GearItemObj.m_StackableItem.m_Units = unitsToKeep;
+                gearItemObj.m_StackableItem.m_Units = unitsToKeep;
             }
             else
             {
 
-                GameManager.GetInventoryComponent().RemoveGear(GearItemObj.gameObject, true);
+                GameManager.GetInventoryComponent().RemoveGear(gearItemObj.gameObject, true);
             }
             BPMain.backpackContainer.AddGear(clone);
 
         }
 
-        public static void MoveFromBackpackToPlayer(GearItem GearItemObj)
+        public static void MoveFromBackpackToPlayer(GearItem gearItemObj)
         {
 
-            BPMain.backpackContainer.RemoveGear(GearItemObj, true);
-            GameManager.GetPlayerManagerComponent().AddItemToPlayerInventory(GearItemObj, true, false);
+            BPMain.backpackContainer.RemoveGear(gearItemObj, true);
+            GameManager.GetPlayerManagerComponent().AddItemToPlayerInventory(gearItemObj, true, false);
         }
 
         public static void PopulateBackpack()
@@ -72,19 +72,19 @@ namespace CunningSurvivor
             List<GearItem> itemsToMove = new();
             List<String> playerHeld = new();
             List<String> movedItems = new();
-            foreach (GearItemObject GearItemObj in GameManager.GetInventoryComponent().m_Items)
+            foreach (GearItemObject gearItemObj in GameManager.GetInventoryComponent().m_Items)
             {
-                playerHeld.Add(GearItemObj.m_GearItem.name);
-                if (GearItemObj.m_GearItem.m_ClothingItem)
+                playerHeld.Add(gearItemObj.m_GearItem.name);
+                if (gearItemObj.m_GearItem.m_ClothingItem)
                 {
-                    if (!GearItemObj.m_GearItem.m_ClothingItem.IsWearing())
+                    if (!gearItemObj.m_GearItem.m_ClothingItem.IsWearing())
                     {
-                        itemsToMove.Add(GearItemObj.m_GearItem);
+                        itemsToMove.Add(gearItemObj.m_GearItem);
                     }
                 }
                 else
                 {
-                    itemsToMove.Add(GearItemObj.m_GearItem);
+                    itemsToMove.Add(gearItemObj.m_GearItem);
                 }
             }
             foreach (GearItem moveItem in itemsToMove)
@@ -124,9 +124,9 @@ namespace CunningSurvivor
         public static void UnpopulateBackpack()
         {
             List<GearItem> itemsToMove = new();
-            foreach (GearItemObject GearItemObj in BPMain.backpackContainer.m_Items)
+            foreach (GearItemObject gearItemObj in BPMain.backpackContainer.m_Items)
             {
-                itemsToMove.Add(GearItemObj.m_GearItem);
+                itemsToMove.Add(gearItemObj.m_GearItem);
             }
 
             foreach (GearItem moveItem in itemsToMove)
