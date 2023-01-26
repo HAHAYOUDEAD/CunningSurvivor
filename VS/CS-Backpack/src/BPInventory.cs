@@ -56,14 +56,14 @@ namespace CunningSurvivor
 
                 GameManager.GetInventoryComponent().RemoveGear(GearItemObj.gameObject, true);
             }
-            BPMain.BackpackContainer.AddGear(clone);
+            BPMain.backpackContainer.AddGear(clone);
 
         }
 
         public static void MoveFromBackpackToPlayer(GearItem GearItemObj)
         {
 
-            BPMain.BackpackContainer.RemoveGear(GearItemObj, true);
+            BPMain.backpackContainer.RemoveGear(GearItemObj, true);
             GameManager.GetPlayerManagerComponent().AddItemToPlayerInventory(GearItemObj, true, false);
         }
 
@@ -94,13 +94,13 @@ namespace CunningSurvivor
                 {
                     quantity = moveItem.m_StackableItem.m_Units;
                 }
-                if (BPMain.ItemsPlayerKeeps.ContainsKey(moveItem.name) && quantity >= BPMain.ItemsPlayerKeeps[moveItem.name])
+                if (BPMain.itemsPlayerKeeps.ContainsKey(moveItem.name) && quantity >= BPMain.itemsPlayerKeeps[moveItem.name])
                 {
-                    quantity -= BPMain.ItemsPlayerKeeps[moveItem.name];
+                    quantity -= BPMain.itemsPlayerKeeps[moveItem.name];
                 }
                 if (
                     movedItems.Contains(moveItem.name) ||
-                    (BPMain.ItemsPlayerKeepsPriority.ContainsKey(moveItem.name) && playerHeld.Contains(BPMain.ItemsPlayerKeepsPriority[moveItem.name]))
+                    (BPMain.itemsPlayerKeepsPriority.ContainsKey(moveItem.name) && playerHeld.Contains(BPMain.itemsPlayerKeepsPriority[moveItem.name]))
                     )
                 {
                     if (moveItem.m_StackableItem)
@@ -124,7 +124,7 @@ namespace CunningSurvivor
         public static void UnpopulateBackpack()
         {
             List<GearItem> itemsToMove = new();
-            foreach (GearItemObject GearItemObj in BPMain.BackpackContainer.m_Items)
+            foreach (GearItemObject GearItemObj in BPMain.backpackContainer.m_Items)
             {
                 itemsToMove.Add(GearItemObj.m_GearItem);
             }
@@ -148,9 +148,9 @@ namespace CunningSurvivor
         {
             Container cloneFrom = ContainerManager.m_Containers[0];
             Il2CppSystem.Collections.Generic.List<GearItem> emptyList = new();
-            BPMain.Backpack.gameObject.AddComponent<Container>();
-            BPMain.BackpackContainer = BPMain.Backpack.GetComponent<Container>();
-            BPMain.BackpackContainer.Deserialize(cloneFrom.Serialize(), emptyList);
+            BPMain.backpack.gameObject.AddComponent<Container>();
+            BPMain.backpackContainer = BPMain.backpack.GetComponent<Container>();
+            BPMain.backpackContainer.Deserialize(cloneFrom.Serialize(), emptyList);
         }
 
 

@@ -1,5 +1,3 @@
-using Unity.VisualScripting;
-
 namespace CunningSurvivor
 {
     internal class BPMain : MelonMod
@@ -9,21 +7,22 @@ namespace CunningSurvivor
 
         public static AssetBundle backpackBundle;
 
-        public static GameObject BackpackInst;
-        public static Transform Backpack;
-        public static bool BackpackPlaced { get; set; } = false;
-        private static bool BackpackPlacing { get; set; } = false;
+        public static GameObject backpackInst;
+        public static Transform backpack;
+        public static bool backpackPlaced { get; set; } = false;
+        private static bool backpackPlacing { get; set; } = false;
 
-        public static Container BackpackContainer;
+        public static Container backpackContainer;
+        public static ContainerInteraction backpackInteraction;
 
-        public static float CarryCapacityBase = 5f;
-        public static float BackpackAddCarryCapacity = 35f;
+        public static float carryCapacityBase = 5f;
+        public static float backpackAddCarryCapacity = 35f;
 
         public static readonly string modFolderName = "cunningSurvivor/backpack/";
         public static readonly string bundleName = "bundlebackpack";
         public static readonly string storedDataFolderName = "Assets/LooseFiles/";
 
-        public static Dictionary<String, String> AttachableGearItems = new()
+        public static Dictionary<String, String> attachableGearItems = new()
         {
             { "GEAR_BearSkinBedRoll", "attachPoint_bedroll" },
             { "GEAR_BedRoll", "attachPoint_bedroll" },
@@ -43,7 +42,7 @@ namespace CunningSurvivor
             { "GEAR_Arrow|3", "attachPoint_arrow" }
         };
         // item to keep, quantity
-        public static Dictionary<String, int> ItemsPlayerKeeps = new()
+        public static Dictionary<String, int> itemsPlayerKeeps = new()
         {
             { "GEAR_WoodMatches", 6 },
             { "GEAR_PackMatches", 6 },
@@ -55,7 +54,7 @@ namespace CunningSurvivor
 
         };
         // lower priority item, higher priority item
-        public static Dictionary<String, String> ItemsPlayerKeepsPriority = new()
+        public static Dictionary<String, String> itemsPlayerKeepsPriority = new()
         {
             { "GEAR_PackMatches", "GEAR_WoodMatches" },
             { "GEAR_KnifeImprovised", "GEAR_Knife" }
@@ -67,13 +66,13 @@ namespace CunningSurvivor
             private static void Postfix(string name, string sceneSaveName)
             {
                 DebugMsg("SaveGameSystem_LoadSceneData (" + name + "|" + sceneSaveName + ")");
-                if (BackpackPlaced == true)
+                if (backpackPlaced == true)
                 {
-                    GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = CarryCapacityBase;
+                    GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = carryCapacityBase;
                 }
                 else
                 {
-                    GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = CarryCapacityBase + BackpackAddCarryCapacity;
+                    GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = carryCapacityBase + backpackAddCarryCapacity;
                 }
 
             }
@@ -93,11 +92,11 @@ namespace CunningSurvivor
         {
             private static void Postfix()
             {
-                if (BackpackPlacing == true)
+                if (backpackPlacing == true)
                 {
                     DebugMsg("PlayerManager_CancelPlaceMesh");
                     PickupBackpack(true);
-                    BackpackPlacing = false;
+                    backpackPlacing = false;
                 }
 
             }
@@ -116,7 +115,7 @@ namespace CunningSurvivor
                     return;
                 }
 
-                if (BackpackPlacing == true)
+                if (backpackPlacing == true)
                 {
                     PlaceBackpackComplete();
                 }
@@ -125,21 +124,26 @@ namespace CunningSurvivor
         }
 
         [HarmonyPatch(typeof(PlayerManager), nameof(PlayerManager.InteractiveObjectsProcessAltFire))]
-        private static class PlayerManager_InteractiveObjectsProcessAltFire
+        internal class PlayerManager_InteractiveObjectsProcessAltFire
         {
-            private static void Postfix(PlayerManager __instance)
+            private static bool Prefix()
             {
-                float maxPickupRange = GameManager.GetGlobalParameters().m_MaxPickupRange;
-                float maxRange = __instance.ComputeModifiedPickupRange(maxPickupRange);
-                GameObject ItemUnderCrosshair = __instance.GetInteractiveObjectUnderCrosshairs(maxRange);
-                if (ItemUnderCrosshair && ItemUnderCrosshair == Backpack)
+                GameObject ItemUnderCrosshair = Utility.GetObjectUnderCrosshair();
+                MelonLogger.Msg(ItemUnderCrosshair);
+                MelonLogger.Msg(ItemUnderCrosshair.name);
+                if (ItemUnderCrosshair && ItemUnderCrosshair == backpack)
                 {
-                    DebugMsg("Item Under Crosshaor = " + ItemUnderCrosshair.name);
-                    GameManager.GetPlayerManagerComponent().StartPlaceMesh(Backpack.gameObject, PlaceMeshFlags.None);
+                    DebugMsg("Item Under Crosshair = " + ItemUnderCrosshair.name);
+
+                    GameManager.GetPlayerManagerComponent().StartPlaceMesh(ItemUnderCrosshair.transform.GetParent().gameObject, PlaceMeshFlags.None);
+                    return false;
                 }
+                return true;
             }
 
         }
+
+
         public override void OnInitializeMelon()
         {
             // Load assets
@@ -177,16 +181,16 @@ namespace CunningSurvivor
                     return;
                 }
 
-                DebugMsg("backpack state " + BackpackPlaced);
+                DebugMsg("backpack state " + backpackPlaced);
 
 
-                if (BackpackPlaced == false)
+                if (backpackPlaced == false)
                 {
                     PlaceBackpackStart();
                     return;
                 }
 
-                if (BackpackPlaced == true)
+                if (backpackPlaced == true)
                 {
                     PickupBackpack();
                     return;
@@ -201,14 +205,14 @@ namespace CunningSurvivor
                     return;
                 }
 
-                DebugMsg("backpack state " + BackpackPlaced);
+                DebugMsg("backpack state " + backpackPlaced);
 
-                if (BackpackPlaced == false)
+                if (backpackPlaced == false)
                 {
                     DebugMsg("No Backpack Placed");
                     return;
                 }
-                if (BackpackPlaced == true)
+                if (backpackPlaced == true)
                 {
                     BPUtils.IsBackpackInRange();
                     return;
@@ -218,38 +222,56 @@ namespace CunningSurvivor
 
         public static void PlaceBackpackStart()
         {
-            if (BackpackPlacing == true)
+            if (backpackPlacing == true)
             {
                 return;
             }
-            BackpackPlacing = true;
+            backpackPlacing = true;
 
-            Transform player = GameManager.GetPlayerTransform();
-            BackpackInst = GameObject.Instantiate(backpackBundle.LoadAsset<GameObject>("backpackWithAttachPoints"));
-            BackpackInst.name = "[CunningSurvivor]Backpack_Parent";
+            //Transform player = GameManager.GetPlayerTransform();
+            backpackInst = GameObject.Instantiate(backpackBundle.LoadAsset<GameObject>("backpackWithAttachPoints"));
+            backpackInst.layer = vp_Layer.Container;
+            backpack = backpackInst.transform.GetChild(0);
+            backpack.gameObject.layer = vp_Layer.Container;
+            backpackInst.name = "[CunningSurvivor]Backpack_Parent";
+            backpack.name = "[CunningSurvivor]Backpack";
 
-            Backpack = BackpackInst.transform.GetChild(0);
-            Backpack.name = "[CunningSurvivor]Backpack";
+            //MeshCollider BPCollider = backpackInst.gameObject.AddComponent<MeshCollider>();
+            //Backpack.gameObject.AddComponent<BoxCollider>();
 
+            
             BPInventory.InitBackpackContainer();
 
-            Backpack.gameObject.GetComponent<MeshRenderer>().materials[0].shader = vanillaSkinnedShader;
-            Backpack.gameObject.GetComponent<MeshRenderer>().materials[1].shader = vanillaSkinnedShader;
-            Backpack.gameObject.GetComponent<MeshRenderer>().materials[2].shader = vanillaSkinnedShader;
+            backpackInst.gameObject.AddComponent<ContainerInteraction>();
+            backpackInteraction = backpackInst.GetComponent<ContainerInteraction>();
+            backpackInteraction.enabled = true;
+            backpackInteraction.gameObject.SetActive(true);
+            backpackInteraction.CanInteract = true;
+            backpackInteraction.HoverText = "RMB - Move Backpack";
+            backpackInteraction.m_DefaultHoverText = null;
+            
+
+            //BackpackInteraction.Start();
+            //BackpackInteraction.HoldText = "Open Backpack";
+            //BackpackInteraction._HoldText_k__BackingField = "Open Backpack";
+
+            backpack.gameObject.GetComponent<MeshRenderer>().materials[0].shader = vanillaSkinnedShader;
+            backpack.gameObject.GetComponent<MeshRenderer>().materials[1].shader = vanillaSkinnedShader;
+            backpack.gameObject.GetComponent<MeshRenderer>().materials[2].shader = vanillaSkinnedShader;
 
             // Will variant
             if (Settings.options.backPackVariant == 1)
             {
-                Backpack.gameObject.GetComponent<MeshRenderer>().materials[0].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/mainW.png");
-                Backpack.gameObject.GetComponent<MeshRenderer>().materials[1].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/backW.png");
-                Backpack.gameObject.GetComponent<MeshRenderer>().materials[2].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/detailW.png");
+                backpack.gameObject.GetComponent<MeshRenderer>().materials[0].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/mainW.png");
+                backpack.gameObject.GetComponent<MeshRenderer>().materials[1].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/backW.png");
+                backpack.gameObject.GetComponent<MeshRenderer>().materials[2].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/detailW.png");
             }
             // Astrid variant
             if (Settings.options.backPackVariant == 2)
             {
-                Backpack.gameObject.GetComponent<MeshRenderer>().materials[0].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/mainA.png");
-                Backpack.gameObject.GetComponent<MeshRenderer>().materials[1].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/backA.png");
-                Backpack.gameObject.GetComponent<MeshRenderer>().materials[2].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/detailA.png");
+                backpack.gameObject.GetComponent<MeshRenderer>().materials[0].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/mainA.png");
+                backpack.gameObject.GetComponent<MeshRenderer>().materials[1].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/backA.png");
+                backpack.gameObject.GetComponent<MeshRenderer>().materials[2].mainTexture = backpackBundle.LoadAsset<Texture>(storedDataFolderName + "Tex/detailA.png");
             }
 
             // attach the gear to the backpack before placing mesh
@@ -258,10 +280,10 @@ namespace CunningSurvivor
             // populate the backpack
             BPInventory.PopulateBackpack();
 
-            GameManager.GetPlayerManagerComponent().StartPlaceMesh(Backpack.gameObject, PlaceMeshFlags.None);
-            GameManager.GetPlayerManagerComponent().m_RotationAngle = Backpack.gameObject.transform.localEulerAngles.y;
+            GameManager.GetPlayerManagerComponent().StartPlaceMesh(backpackInst.gameObject, PlaceMeshFlags.None);
+            GameManager.GetPlayerManagerComponent().m_RotationAngle = backpackInst.gameObject.transform.localEulerAngles.y;
 
-            GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = CarryCapacityBase;
+            GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = carryCapacityBase;
 
             DebugMsg("Placing backpack");
 
@@ -270,8 +292,8 @@ namespace CunningSurvivor
 
         public static void PlaceBackpackComplete()
         {
-            BackpackPlaced = true;
-            BackpackPlacing = false;
+            backpackPlaced = true;
+            backpackPlacing = false;
             HUDMessage.AddMessage("Backpack Placed", 1, true, true);
 
 
@@ -287,22 +309,24 @@ namespace CunningSurvivor
                     return;
                 }
             }
-            if (BackpackPlaced == true || BackpackPlacing == true)
+            if (backpackPlaced == true || backpackPlacing == true)
             {
                 // TODO
-                GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = CarryCapacityBase + BackpackAddCarryCapacity;
+                GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = carryCapacityBase + backpackAddCarryCapacity;
                 BPInventory.UnpopulateBackpack();
 
                 if (force == false)
                 {
                     HUDMessage.AddMessage("Backpack Picked Up", 1f, true, true);
                 }
+														 
+															 
                 BPAttachPoints.Clear();
-                GameObject.Destroy(BackpackInst.gameObject);
-                GameObject.Destroy(Backpack.gameObject);
-                BackpackContainer.DestroyAllGear();
+                GameObject.Destroy(backpackInst.gameObject);
+                GameObject.Destroy(backpack.gameObject);
+                backpackContainer.DestroyAllGear();
                 DebugMsg("Backpack Picked Up | forced " + force);
-                BackpackPlaced = false;
+                backpackPlaced = false;
 
             }
         }
