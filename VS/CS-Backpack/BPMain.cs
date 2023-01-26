@@ -1,3 +1,5 @@
+using Unity.VisualScripting;
+
 namespace CunningSurvivor
 {
     internal class BPMain : MelonMod
@@ -13,7 +15,7 @@ namespace CunningSurvivor
         private static bool BackpackPlacing { get; set; } = false;
 
         public static Container BackpackContainer;
-        public static ContainerInteraction BackpackContainerInteraction;
+        public static ContainerInteraction BackpackInteraction;
 
         public static float CarryCapacityBase = 5f;
         public static float BackpackAddCarryCapacity = 35f;
@@ -53,7 +55,7 @@ namespace CunningSurvivor
             { "GEAR_BottlePainKillers", 6 }
 
         };
-        // lower prioeity item, higher priority item
+        // lower priority item, higher priority item
         public static Dictionary<String, String> ItemsPlayerKeepsPriority = new()
         {
             { "GEAR_PackMatches", "GEAR_WoodMatches" },
@@ -69,7 +71,8 @@ namespace CunningSurvivor
                 if (BackpackPlaced == true)
                 {
                     GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = CarryCapacityBase;
-                } else
+                }
+                else
                 {
                     GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = CarryCapacityBase + BackpackAddCarryCapacity;
                 }
@@ -122,6 +125,22 @@ namespace CunningSurvivor
             }
         }
 
+        [HarmonyPatch(typeof(PlayerManager), nameof(PlayerManager.InteractiveObjectsProcessAltFire))]
+        private static class PlayerManager_InteractiveObjectsProcessAltFire
+        {
+            private static void Postfix(PlayerManager __instance)
+            {
+                float maxPickupRange = GameManager.GetGlobalParameters().m_MaxPickupRange;
+                float maxRange = __instance.ComputeModifiedPickupRange(maxPickupRange);
+                GameObject ItemUnderCrosshair = __instance.GetInteractiveObjectUnderCrosshairs(maxRange);
+                if (ItemUnderCrosshair && ItemUnderCrosshair == BackpackInst)
+                {
+                    DebugMsg("Item Under Crosshaor = "+ ItemUnderCrosshair.name);
+                    GameManager.GetPlayerManagerComponent().StartPlaceMesh(BackpackInst.gameObject, PlaceMeshFlags.None);
+                }
+            }
+
+        }
         public override void OnInitializeMelon()
         {
             // Load assets
@@ -134,7 +153,7 @@ namespace CunningSurvivor
             // Enable settings
             Settings.OnLoad();
 
-            
+
         }
 
         public static void DebugMsg(string msg = "")
@@ -208,20 +227,34 @@ namespace CunningSurvivor
 
             Transform player = GameManager.GetPlayerTransform();
             BackpackInst = GameObject.Instantiate(backpackBundle.LoadAsset<GameObject>("backpackWithAttachPoints"));
+            BackpackInst.layer = vp_Layer.Container;
             Backpack = BackpackInst.transform.GetChild(0);
             BackpackInst.name = "[CunningSurvivor]Backpack_Parent";
             Backpack.name = "[CunningSurvivor]Backpack";
 
-            BackpackContainer = BackpackInst.gameObject.AddComponent<Container>();
+            MeshCollider BPCollider = BackpackInst.gameObject.AddComponent<MeshCollider>();
+            //Backpack.gameObject.AddComponent<BoxCollider>();
+
+
+            BackpackInst.gameObject.AddComponent<Container>();
+            BackpackContainer = BackpackInst.GetComponent<Container>();
+            BackpackContainer.Start();
+            BackpackContainer.m_Inspected = true;
+            BackpackContainer.m_NotPopulated = false;
+            BackpackContainer.m_GearToInstantiate.Clear();
             BackpackContainer.m_Items.Clear();
             BackpackContainer.m_CapacityKG = BackpackAddCarryCapacity;
             BackpackContainer.m_LocalizedDisplayName = null;
-            BackpackContainer.name = "CS_CONTAINER_Backpack";
-            BackpackContainer.m_Inspected = true;
-            BackpackContainerInteraction = BackpackInst.gameObject.AddComponent<ContainerInteraction>();
-            BackpackContainerInteraction.Start();
-            BackpackContainerInteraction.HoldText = "Open Backpack";
-            BackpackContainerInteraction._HoldText_k__BackingField = "Open Backpack";
+            BackpackInst.gameObject.AddComponent<ContainerInteraction>();
+            BackpackInteraction = BackpackInst.GetComponent<ContainerInteraction>();
+            BackpackInteraction.enabled = true;
+            BackpackInteraction.gameObject.SetActive(true);
+            BackpackInteraction.CanInteract = true;
+            BackpackInteraction.HoverText = "RMB - Move Backpack";
+            BackpackInteraction.m_DefaultHoverText = null;
+            //BackpackInteraction.Start();
+            //BackpackInteraction.HoldText = "Open Backpack";
+            //BackpackInteraction._HoldText_k__BackingField = "Open Backpack";
 
             BackpackInst.gameObject.AddComponent<ObjectGuid>();
             BackpackInst.gameObject.GetComponent<ObjectGuid>().m_Guid = Guid.NewGuid().ToString();

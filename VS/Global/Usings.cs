@@ -5,3 +5,5 @@ global using MelonLoader;
 global using HarmonyLib;
 global using UnityEngine;
 global using Il2Cpp;
+global using Il2CppTLD.Gear;
+global using Il2CppTLD.Interactions;
