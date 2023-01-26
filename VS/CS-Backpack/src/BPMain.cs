@@ -128,7 +128,7 @@ namespace CunningSurvivor
         {
             private static bool Prefix()
             {
-                GameObject ItemUnderCrosshair = Utility.GetObjectUnderCrosshair();
+                GameObject ItemUnderCrosshair = Utility.GetObjectUnderCrosshairST();
                 MelonLogger.Msg(ItemUnderCrosshair);
                 MelonLogger.Msg(ItemUnderCrosshair.name);
                 if (ItemUnderCrosshair && ItemUnderCrosshair == backpackParent)
