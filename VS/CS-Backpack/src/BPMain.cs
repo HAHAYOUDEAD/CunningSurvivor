@@ -19,7 +19,7 @@ namespace CunningSurvivor
         public static readonly string bundleName = "bundlebackpack";
         public static readonly string storedDataFolderName = "Assets/LooseFiles/";
 
-        
+
         public override void OnInitializeMelon()
         {
             // Load assets
@@ -37,7 +37,7 @@ namespace CunningSurvivor
 
         public override void OnUpdate()
         {
-            // temp proximity check keybind
+            // temp placement keybind
             // replace with inventory interaction/button
             if (InputManager.GetKeyDown(InputManager.m_CurrentContext, KeyCode.B))
             {
@@ -106,7 +106,7 @@ namespace CunningSurvivor
             //MeshCollider BPCollider = backpackParent.gameObject.AddComponent<MeshCollider>();
             //Backpack.gameObject.AddComponent<BoxCollider>();
 
-            
+
             BPInventory.InitBackpackContainer();
 
             backpackParent.gameObject.AddComponent<ContainerInteraction>();
@@ -116,7 +116,7 @@ namespace CunningSurvivor
             backpackInteraction.CanInteract = true;
             backpackInteraction.HoverText = "RMB - Move Backpack";
             backpackInteraction.m_DefaultHoverText = null;
-            
+
 
             //BackpackInteraction.Start();
             //BackpackInteraction.HoldText = "Open Backpack";
@@ -150,7 +150,7 @@ namespace CunningSurvivor
             GameManager.GetPlayerManagerComponent().StartPlaceMesh(backpackParent.gameObject, PlaceMeshFlags.None);
             GameManager.GetPlayerManagerComponent().m_RotationAngle = backpackParent.gameObject.transform.localEulerAngles.y;
 
-            GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = BPParams.carryCapacityBase;
+            BPCarryCapacity.Update();
 
             BPUtils.DebugMsg("Placing backpack");
 
@@ -161,6 +161,7 @@ namespace CunningSurvivor
         {
             backpackPlaced = true;
             backpackPlacing = false;
+            BPCarryCapacity.Update();
             HUDMessage.AddMessage("Backpack Placed", 1, true, true);
 
 
@@ -179,23 +180,22 @@ namespace CunningSurvivor
             if (backpackPlaced == true || backpackPlacing == true)
             {
                 // TODO
-                GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = BPParams.carryCapacityBase + BPParams.backpackAddCarryCapacity;
                 BPInventory.UnpopulateBackpack();
 
                 if (force == false)
                 {
                     HUDMessage.AddMessage("Backpack Picked Up", 1f, true, true);
                 }
-														 
-															 
+
+
                 BPAttachPoints.Clear();
                 GameObject.Destroy(backpackParent.gameObject);
                 GameObject.Destroy(backpack.gameObject);
                 backpackContainer.DestroyAllGear();
                 BPUtils.DebugMsg("Backpack Picked Up | forced " + force);
                 backpackPlaced = false;
-
             }
+            BPCarryCapacity.Update();
         }
 
 

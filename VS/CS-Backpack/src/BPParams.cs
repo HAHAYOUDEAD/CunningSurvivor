@@ -40,8 +40,8 @@
             { "GEAR_KnifeImprovised", "GEAR_Knife" }
         };
 
-        public static float carryCapacityBase = 2f;
+        public static float carryCapacityBase = 5f;
 
-        public static float backpackAddCarryCapacity = 35f;
+        public static float backpackBaseCapacity = 35f;
     }
 }
