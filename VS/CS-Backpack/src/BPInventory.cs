@@ -53,7 +53,7 @@
             {
                 GameManager.GetInventoryComponent().RemoveGear(GearItemObj.gameObject, true);
             }
-            BPMain.BackpackContainer.AddGear(clone);
+            BPMain.backpackContainer.AddGear(clone);
 
         }
 
@@ -62,7 +62,7 @@
             string cloneText = GearItemObj.Serialize();
             GearItem clone = GearItem.InstantiateGearItem(GearItemObj.name);
             clone.Deserialize(cloneText);
-            BPMain.BackpackContainer.RemoveGear(GearItemObj, true);
+            BPMain.backpackContainer.RemoveGear(GearItemObj, true);
             int quantity = 1;
             if (clone.m_StackableItem)
             {
@@ -102,13 +102,13 @@
                 {
                     quantity = moveItem.m_StackableItem.m_Units;
                 }
-                if (BPMain.ItemsPlayerKeeps.ContainsKey(moveItem.name) && quantity >= BPMain.ItemsPlayerKeeps[moveItem.name])
+                if (BPMain.itemsPlayerKeeps.ContainsKey(moveItem.name) && quantity >= BPMain.itemsPlayerKeeps[moveItem.name])
                 {
-                    quantity -= BPMain.ItemsPlayerKeeps[moveItem.name];
+                    quantity -= BPMain.itemsPlayerKeeps[moveItem.name];
                 }
                 if (
                     movedItems.Contains(moveItem.name) ||
-                    (BPMain.ItemsPlayerKeepsPriority.ContainsKey(moveItem.name) && playerHeld.Contains(BPMain.ItemsPlayerKeepsPriority[moveItem.name]))
+                    (BPMain.itemsPlayerKeepsPriority.ContainsKey(moveItem.name) && playerHeld.Contains(BPMain.itemsPlayerKeepsPriority[moveItem.name]))
                     )
                 {
                     if (moveItem.m_StackableItem)
@@ -128,7 +128,7 @@
         public static void UnpopulateBackpack()
         {
             List<GearItem> itemsToMove = new();
-            foreach (GearItemObject GearItemObj in BPMain.BackpackContainer.m_Items)
+            foreach (GearItemObject GearItemObj in BPMain.backpackContainer.m_Items)
             {
                 itemsToMove.Add(GearItemObj.m_GearItem);
             }

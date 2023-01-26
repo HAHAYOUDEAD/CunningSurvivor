@@ -13,7 +13,7 @@
 
         public static void AttachBackpackGear()
         {
-            foreach (KeyValuePair<String, String> item in BPMain.AttachableGearItems)
+            foreach (KeyValuePair<String, String> item in BPMain.attachableGearItems)
             {
                 int GearItemCount = 1;
                 String GearItemName = item.Key;
@@ -61,19 +61,19 @@
             }
 
             Transform output = GearItem.InstantiateGearItem(gear).transform;
-            Transform attachPoint = BPMain.Backpack.FindChild(attachPointName);
+            Transform attachPoint = BPMain.backpack.FindChild(attachPointName);
             UnityEngine.Object.Destroy(output.GetComponent<GearItem>());
             output.SetParent(attachPoint);
             output.Zero();
             if (flag == "lantern")
             {
                 Transform originalMesh = output.FindChild("KeroseneLampB");
-                Transform replacementMesh = BPMain.Backpack.GetParent().FindChild("Lantern_HandleUp");
+                Transform replacementMesh = BPMain.backpack.GetParent().FindChild("Lantern_HandleUp");
                 if (originalMesh)
                 {
                     replacementMesh.SetParent(originalMesh.GetParent());
                     replacementMesh.GetComponent<MeshRenderer>().materials = originalMesh.GetComponent<MeshRenderer>().materials;
-                    replacementMesh.localEulerAngles = Vector3.right * 270f;
+                    replacementMesh.localEulerAngles = Vector3.zero;
                     replacementMesh.localPosition = Vector3.zero;
                     replacementMesh.localScale = Vector3.one;
                     originalMesh.gameObject.SetActive(false);
