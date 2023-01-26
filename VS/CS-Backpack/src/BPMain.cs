@@ -7,7 +7,7 @@ namespace CunningSurvivor
 
         public static AssetBundle backpackBundle;
 
-        public static GameObject backpackInst;
+        public static GameObject backpackParent;
         public static Transform backpack;
         public static bool backpackPlaced { get; set; } = false;
         private static bool backpackPlacing { get; set; } = false;
@@ -131,11 +131,11 @@ namespace CunningSurvivor
                 GameObject ItemUnderCrosshair = Utility.GetObjectUnderCrosshair();
                 MelonLogger.Msg(ItemUnderCrosshair);
                 MelonLogger.Msg(ItemUnderCrosshair.name);
-                if (ItemUnderCrosshair && ItemUnderCrosshair == backpack)
+                if (ItemUnderCrosshair && ItemUnderCrosshair == backpackParent)
                 {
                     DebugMsg("Item Under Crosshair = " + ItemUnderCrosshair.name);
 
-                    GameManager.GetPlayerManagerComponent().StartPlaceMesh(ItemUnderCrosshair.transform.GetParent().gameObject, PlaceMeshFlags.None);
+                    GameManager.GetPlayerManagerComponent().StartPlaceMesh(ItemUnderCrosshair, PlaceMeshFlags.None);
                     return false;
                 }
                 return true;
@@ -229,21 +229,21 @@ namespace CunningSurvivor
             backpackPlacing = true;
 
             //Transform player = GameManager.GetPlayerTransform();
-            backpackInst = GameObject.Instantiate(backpackBundle.LoadAsset<GameObject>("backpackWithAttachPoints"));
-            backpackInst.layer = vp_Layer.Container;
-            backpack = backpackInst.transform.GetChild(0);
+            backpackParent = GameObject.Instantiate(backpackBundle.LoadAsset<GameObject>("backpackWithAttachPoints"));
+            backpackParent.layer = vp_Layer.Container;
+            backpack = backpackParent.transform.GetChild(0);
             backpack.gameObject.layer = vp_Layer.Container;
-            backpackInst.name = "[CunningSurvivor]Backpack_Parent";
+            backpackParent.name = "[CunningSurvivor]Backpack_Parent";
             backpack.name = "[CunningSurvivor]Backpack";
 
-            //MeshCollider BPCollider = backpackInst.gameObject.AddComponent<MeshCollider>();
+            //MeshCollider BPCollider = backpackParent.gameObject.AddComponent<MeshCollider>();
             //Backpack.gameObject.AddComponent<BoxCollider>();
 
             
             BPInventory.InitBackpackContainer();
 
-            backpackInst.gameObject.AddComponent<ContainerInteraction>();
-            backpackInteraction = backpackInst.GetComponent<ContainerInteraction>();
+            backpackParent.gameObject.AddComponent<ContainerInteraction>();
+            backpackInteraction = backpackParent.GetComponent<ContainerInteraction>();
             backpackInteraction.enabled = true;
             backpackInteraction.gameObject.SetActive(true);
             backpackInteraction.CanInteract = true;
@@ -280,8 +280,8 @@ namespace CunningSurvivor
             // populate the backpack
             BPInventory.PopulateBackpack();
 
-            GameManager.GetPlayerManagerComponent().StartPlaceMesh(backpackInst.gameObject, PlaceMeshFlags.None);
-            GameManager.GetPlayerManagerComponent().m_RotationAngle = backpackInst.gameObject.transform.localEulerAngles.y;
+            GameManager.GetPlayerManagerComponent().StartPlaceMesh(backpackParent.gameObject, PlaceMeshFlags.None);
+            GameManager.GetPlayerManagerComponent().m_RotationAngle = backpackParent.gameObject.transform.localEulerAngles.y;
 
             GameManager.GetEncumberComponent().m_MaxCarryCapacityKG = carryCapacityBase;
 
@@ -322,7 +322,7 @@ namespace CunningSurvivor
 														 
 															 
                 BPAttachPoints.Clear();
-                GameObject.Destroy(backpackInst.gameObject);
+                GameObject.Destroy(backpackParent.gameObject);
                 GameObject.Destroy(backpack.gameObject);
                 backpackContainer.DestroyAllGear();
                 DebugMsg("Backpack Picked Up | forced " + force);
