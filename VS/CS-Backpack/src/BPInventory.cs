@@ -1,4 +1,6 @@
-﻿namespace CunningSurvivor
+﻿using Il2Cpp;
+
+namespace CunningSurvivor
 {
     internal static class BPInventory
     {
@@ -51,6 +53,7 @@
             }
             else
             {
+
                 GameManager.GetInventoryComponent().RemoveGear(GearItemObj.gameObject, true);
             }
             BPMain.BackpackContainer.AddGear(clone);
@@ -59,20 +62,9 @@
 
         public static void MoveFromBackpackToPlayer(GearItem GearItemObj)
         {
-            string cloneText = GearItemObj.Serialize();
-            GearItem clone = GearItem.InstantiateGearItem(GearItemObj.name);
-            clone.Deserialize(cloneText);
+
             BPMain.BackpackContainer.RemoveGear(GearItemObj, true);
-            int quantity = 1;
-            if (clone.m_StackableItem)
-            {
-                quantity = clone.m_StackableItem.m_Units;
-            }
-            if (!GameManager.GetPlayerManagerComponent().TryAddToExistingStackable(clone, quantity, out GearItem existingStack))
-            {
-                GameManager.GetInventoryComponent().AddGear(clone, false);
-            }
-            
+            GameManager.GetPlayerManagerComponent().AddItemToPlayerInventory(GearItemObj, true, false);
         }
 
         public static void PopulateBackpack()
@@ -114,14 +106,18 @@
                     if (moveItem.m_StackableItem)
                     {
                         quantity = moveItem.m_StackableItem.m_Units;
-                    } else
+                    }
+                    else
                     {
                         quantity = 1;
                     }
                 }
-                movedItems.Add(moveItem.name);
-                BPMain.DebugMsg("Item moved to backpack | " + moveItem.name + " (" + moveItem.GetNormalizedCondition() * 100 + "%) | " + quantity);
-                MoveFromPlayerToBackpack(moveItem, quantity);
+                if (quantity > 0)
+                {
+                    movedItems.Add(moveItem.name);
+                    BPMain.DebugMsg("Item moved to backpack | " + moveItem.name + " (" + moveItem.GetNormalizedCondition() * 100 + "%) | " + quantity);
+                    MoveFromPlayerToBackpack(moveItem, quantity);
+                }
             }
         }
 
@@ -140,10 +136,23 @@
                 {
                     quantity = moveItem.m_StackableItem.m_Units;
                 }
-                BPMain.DebugMsg("Item moved to player | " + moveItem.name + " (" + moveItem.GetNormalizedCondition() * 100 + "%) | " + quantity);
-                MoveFromBackpackToPlayer(moveItem);
+                if (quantity > 0)
+                {
+                    BPMain.DebugMsg("Item moved to player | " + moveItem.name + " (" + moveItem.GetNormalizedCondition() * 100 + "%) | " + quantity);
+                    MoveFromBackpackToPlayer(moveItem);
+                }
             }
         }
+
+        public static void InitBackpackContainer()
+        {
+            Container cloneFrom = ContainerManager.m_Containers[0];
+            Il2CppSystem.Collections.Generic.List<GearItem> emptyList = new();
+            BPMain.Backpack.gameObject.AddComponent<Container>();
+            BPMain.BackpackContainer = BPMain.Backpack.GetComponent<Container>();
+            BPMain.BackpackContainer.Deserialize(cloneFrom.Serialize(), emptyList);
+        }
+
 
     }
 
