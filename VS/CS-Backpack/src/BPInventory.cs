@@ -20,15 +20,15 @@ namespace CunningSurvivor
                     !GearItemObj.IsLitTorch()
                     )
                 {
-                    BPMain.DebugMsg("Player has item " + GearItemObj.name);
+                    BPUtils.DebugMsg("Player has item " + GearItemObj.name);
                     return GearItemObj;
                 }
                 else
                 {
-                    BPMain.DebugMsg("Player has item BUT is lit" + GearItemObj.name);
+                    BPUtils.DebugMsg("Player has item BUT is lit" + GearItemObj.name);
                 }
             }
-            BPMain.DebugMsg("Player does not have item " + GearItemName);
+            BPUtils.DebugMsg("Player does not have item " + GearItemName);
 
             return null;
         }
@@ -94,13 +94,13 @@ namespace CunningSurvivor
                 {
                     quantity = moveItem.m_StackableItem.m_Units;
                 }
-                if (BPMain.itemsPlayerKeeps.ContainsKey(moveItem.name) && quantity >= BPMain.itemsPlayerKeeps[moveItem.name])
+                if (BPParams.itemsPlayerKeeps.ContainsKey(moveItem.name) && quantity >= BPParams.itemsPlayerKeeps[moveItem.name])
                 {
-                    quantity -= BPMain.itemsPlayerKeeps[moveItem.name];
+                    quantity -= BPParams.itemsPlayerKeeps[moveItem.name];
                 }
                 if (
                     movedItems.Contains(moveItem.name) ||
-                    (BPMain.itemsPlayerKeepsPriority.ContainsKey(moveItem.name) && playerHeld.Contains(BPMain.itemsPlayerKeepsPriority[moveItem.name]))
+                    (BPParams.itemsPlayerKeepsPriority.ContainsKey(moveItem.name) && playerHeld.Contains(BPParams.itemsPlayerKeepsPriority[moveItem.name]))
                     )
                 {
                     if (moveItem.m_StackableItem)
@@ -115,7 +115,7 @@ namespace CunningSurvivor
                 if (quantity > 0)
                 {
                     movedItems.Add(moveItem.name);
-                    BPMain.DebugMsg("Item moved to backpack | " + moveItem.name + " (" + moveItem.GetNormalizedCondition() * 100 + "%) | " + quantity);
+                    BPUtils.DebugMsg("Item moved to backpack | " + moveItem.name + " (" + moveItem.GetNormalizedCondition() * 100 + "%) | " + quantity);
                     MoveFromPlayerToBackpack(moveItem, quantity);
                 }
             }
@@ -138,7 +138,7 @@ namespace CunningSurvivor
                 }
                 if (quantity > 0)
                 {
-                    BPMain.DebugMsg("Item moved to player | " + moveItem.name + " (" + moveItem.GetNormalizedCondition() * 100 + "%) | " + quantity);
+                    BPUtils.DebugMsg("Item moved to player | " + moveItem.name + " (" + moveItem.GetNormalizedCondition() * 100 + "%) | " + quantity);
                     MoveFromBackpackToPlayer(moveItem);
                 }
             }

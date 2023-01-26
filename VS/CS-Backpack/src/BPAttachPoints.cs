@@ -13,7 +13,7 @@
 
         public static void AttachBackpackGear()
         {
-            foreach (KeyValuePair<String, String> item in BPMain.attachableGearItems)
+            foreach (KeyValuePair<String, String> item in BPParams.attachableGearItems)
             {
                 int GearItemCount = 1;
                 String GearItemName = item.Key;
@@ -56,7 +56,7 @@
         {
             if (UsedAttachPoints.Contains(attachPointName))
             {
-                BPMain.DebugMsg("Attach point already used " + attachPointName);
+                BPUtils.DebugMsg("Attach point already used " + attachPointName);
                 return false;
             }
 
@@ -81,7 +81,7 @@
                 }
             }
             UsedAttachPoints.Add(attachPointName);
-            BPMain.DebugMsg("Set up " + gear + " " + attachPointName + " " + flag);
+            BPUtils.DebugMsg("Set up " + gear + " " + attachPointName + " " + flag);
             
             return true;
         }

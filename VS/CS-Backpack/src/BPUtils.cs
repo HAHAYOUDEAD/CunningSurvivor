@@ -2,6 +2,13 @@
 {
     internal static class BPUtils
     {
+        public static void DebugMsg(string msg = "")
+        {
+            if (Settings.options.backPackDebug == true && msg != "")
+            {
+                MelonLogger.Msg(msg);
+            }
+        }
         public static float? GetBackpackDistance()
         {
             if (BPMain.backpackPlaced == false)
@@ -9,7 +16,7 @@
                 return null;
             }
             float distance = Utils.DistanceToMainCamera(BPMain.backpack.position);
-            BPMain.DebugMsg("Backpack distance " + distance + " required " + Settings.options.backPackMinDistance);
+            DebugMsg("Backpack distance " + distance + " required " + Settings.options.backPackMinDistance);
             return distance;
         }
 
@@ -20,11 +27,11 @@
                 float? distance = GetBackpackDistance();
                 if (distance != null && distance <= Settings.options.backPackMinDistance)
                 {
-                    BPMain.DebugMsg("Backpack IN range");                    
+                    DebugMsg("Backpack IN range");                    
                     return true;
                 }
             }
-            BPMain.DebugMsg("Backpack NOT in range");
+            DebugMsg("Backpack NOT in range");
             return false;
         }
 
