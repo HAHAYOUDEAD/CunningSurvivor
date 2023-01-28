@@ -79,8 +79,17 @@ namespace CunningSurvivor
                     BPUtils.DebugMsg("No Backpack Placed");
                     return;
                 }
-                if (backpackPlaced == true)
+                if (backpackPlaced == true && backpackPlacing == false)
                 {
+                    try
+                    {
+                        backpackContainer.BeginContainerOpen();
+                    }
+                    catch (Exception e)
+                    {
+                        BPUtils.DebugMsg(e.ToString());
+                    }
+                    
                     BPUtils.IsBackpackInRange();
                     return;
                 }
@@ -109,12 +118,12 @@ namespace CunningSurvivor
 
             BPInventory.InitBackpackContainer();
 
-            backpackParent.gameObject.AddComponent<ContainerInteraction>();
-            backpackInteraction = backpackParent.GetComponent<ContainerInteraction>();
+            backpack.gameObject.AddComponent<ContainerInteraction>();
+            backpackInteraction = backpack.GetComponent<ContainerInteraction>();
             backpackInteraction.enabled = true;
             backpackInteraction.gameObject.SetActive(true);
             backpackInteraction.CanInteract = true;
-            backpackInteraction.HoverText = "RMB - Move Backpack";
+            backpackInteraction.HoverText = "Open Backpack\nRMB - Move Backpack";
             backpackInteraction.m_DefaultHoverText = null;
 
 

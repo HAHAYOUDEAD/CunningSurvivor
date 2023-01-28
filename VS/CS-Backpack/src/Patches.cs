@@ -63,14 +63,18 @@
             private static bool Prefix()
             {
                 GameObject ItemUnderCrosshair = Utility.GetObjectUnderCrosshairST();
-                MelonLogger.Msg(ItemUnderCrosshair);
-                MelonLogger.Msg(ItemUnderCrosshair.name);
-                if (ItemUnderCrosshair && ItemUnderCrosshair == BPMain.backpackParent)
-                {
-                    BPUtils.DebugMsg("Item Under Crosshair = " + ItemUnderCrosshair.name);
 
-                    GameManager.GetPlayerManagerComponent().StartPlaceMesh(ItemUnderCrosshair, PlaceMeshFlags.None);
-                    return false;
+                if (ItemUnderCrosshair)
+                {
+                    MelonLogger.Msg(ItemUnderCrosshair);
+                    MelonLogger.Msg(ItemUnderCrosshair.name);
+                    if (ItemUnderCrosshair == BPMain.backpackParent)
+                    {
+                        BPUtils.DebugMsg("Item Under Crosshair = " + ItemUnderCrosshair.name);
+
+                        GameManager.GetPlayerManagerComponent().StartPlaceMesh(ItemUnderCrosshair, PlaceMeshFlags.None);
+                        return false;
+                    }
                 }
                 return true;
             }
@@ -86,14 +90,16 @@
                 BPCarryCapacity.Update();
             }
         }
+
         [HarmonyPatch(typeof(PlayerManager), nameof(PlayerManager.TakeOffClothingItem))]
         internal class PlayerManager_TakeOffClothingItem
         {
             private static void Postfix(GearItem gi)
             {
-                BPUtils.DebugMsg("PlayerManager_TakeOffClothingItem | " + gi.m_ClothingItem.name + "|" + gi.m_ClothingItem.m_Region + "|" + gi.m_ClothingItem.m_EquippedLayer);
+                BPUtils.DebugMsg("PlayerManager_TakeOffClothingItem | " + gi.m_ClothingItem.name + "|" + gi.m_ClothingItem.m_Region + "|" + gi.m_ClothingItem.m_EquippedLayer + " | " + gi.m_ClothingItem.IsWearing());
                 BPCarryCapacity.Update();
             }
         }
+
     }
 }

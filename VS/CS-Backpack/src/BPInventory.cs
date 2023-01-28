@@ -151,6 +151,19 @@ namespace CunningSurvivor
             BPMain.backpack.gameObject.AddComponent<Container>();
             BPMain.backpackContainer = BPMain.backpack.GetComponent<Container>();
             BPMain.backpackContainer.Deserialize(cloneFrom.Serialize(), emptyList);
+            BPMain.backpackContainer.m_CapacityKG = BPParams.backpackBaseCapacity;
+            BPMain.backpackContainer.m_ContainerPanel = cloneFrom.m_ContainerPanel;
+            BPMain.backpackContainer.m_LocalizedDisplayName = cloneFrom.m_LocalizedDisplayName;
+            BPMain.backpackContainer.m_LocalizedDisplayName.m_LocalizationID = "CS_Backpack";
+            // empty animation list (prevent trampoline)
+            BPMain.backpackContainer.gameObject.AddComponent<ObjectAnim>();
+            // empty audio cues (prevent trampoline) Maybe use backpack "zip" sounds
+            BPMain.backpackContainer.m_OpenAudio = "";
+            BPMain.backpackContainer.m_CloseAudio = "";
+            // skip open VO
+            BPMain.backpackContainer.m_SkipInspectVO = true;
+            // make sure we have no gear to Instantiate
+            BPMain.backpackContainer.m_GearToInstantiate.Clear();
         }
 
 
