@@ -83,7 +83,7 @@ namespace CunningSurvivor
                 {
                     try
                     {
-                        backpackContainer.BeginContainerOpen();
+                        backpackInteraction.PerformInteraction();
                     }
                     catch (Exception e)
                     {

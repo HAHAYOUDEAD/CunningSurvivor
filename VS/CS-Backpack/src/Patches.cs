@@ -1,4 +1,6 @@
-﻿namespace CunningSurvivor
+﻿using Il2Cpp;
+
+namespace CunningSurvivor
 {
     internal class Patches
     {
@@ -101,5 +103,61 @@
             }
         }
 
+        [HarmonyPatch(typeof(Inventory), nameof(Inventory.GetNonRuinedItem), new Type[] { typeof(string) })]
+        internal class Inventory_GetNonRuinedItem
+        {
+            private static void Postfix(string gearName, ref GearItem? __result)
+            {
+                if (!BPMain.backpackPlaced)
+                {
+                    return;
+                }
+
+                bool isFound = false;
+                BPUtils.DebugMsg("Inventory_GetNonRuinedItem_Postfix | checking backpack for " + gearName);
+                for (int i = 0; i < BPMain.backpackContainer.m_Items.Count; i++)
+                {
+                    GearItem newGearItem = BPMain.backpackContainer.m_Items[i];
+                    if (newGearItem.name != gearName)
+                    {
+                        continue;
+                    }
+                    if ((bool)newGearItem && (bool)newGearItem.m_BreakDownItem && !Utils.IsZero(newGearItem.CurrentHP))
+                    {
+                        isFound = true;
+                        if (!BPUtils.IsBackpackInRange())
+                        {
+                            BPUtils.DebugMsg("Inventory_GetNonRuinedItem_Postfix | backpack had " + gearName + " | " + isFound + " | NOT IN RANGE");
+                            HUDMessage.AddMessage("Backpack out of range", 1, true, true);
+                            return;
+                        }
+                        __result = newGearItem;
+                        BPUtils.DebugMsg("Inventory_GetNonRuinedItem_Postfix | backpack had " + gearName + " | " + isFound);
+                        return;
+                    }
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Panel_BreakDown), nameof(Panel_BreakDown.RefreshTools))]
+        internal class Panel_BreakDown_RefreshTools
+        {
+            private static void Postfix(Panel_BreakDown __instance)
+            {
+                if (!BPMain.backpackPlaced || !BPUtils.IsBackpackInRange())
+                {
+                    return;
+                }
+                for (int i = 0; i < BPMain.backpackContainer.m_Items.Count; i++)
+                {
+                    GearItem gearItem = BPMain.backpackContainer.m_Items[i];
+                    if ((bool)gearItem && (bool)gearItem.m_BreakDownItem && !Utils.IsZero(gearItem.CurrentHP))
+                    {
+                        BPUtils.DebugMsg("Panel_BreakDown_RefreshTools | added " + gearItem.name + " to Panel_Breakdown.m_Tools");
+                        __instance.m_Tools.Add(gearItem);
+                    }
+                }
+            }
+        }
     }
 }
