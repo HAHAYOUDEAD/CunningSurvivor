@@ -108,7 +108,7 @@ namespace CunningSurvivor
         {
             private static void Postfix(string gearName, ref GearItem? __result)
             {
-                if (!BPMain.backpackPlaced)
+                if (!BPMain.backpackPlaced || __result != null)
                 {
                     return;
                 }
@@ -155,6 +155,42 @@ namespace CunningSurvivor
                     {
                         BPUtils.DebugMsg("Panel_BreakDown_RefreshTools | added " + gearItem.name + " to Panel_Breakdown.m_Tools");
                         __instance.m_Tools.Add(gearItem);
+                    }
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(Inventory), nameof(Inventory.GetHighestConditionGearThatMatchesName), new Type[] { typeof(string) })]
+        internal class Inventory_GetHighestConditionGearThatMatchesName
+        {
+            private static void Postfix(string name, ref GearItem? __result)
+            {
+                if (!BPMain.backpackPlaced || __result != null)
+                {
+                    return;
+                }
+
+                bool isFound = false;
+                BPUtils.DebugMsg("Inventory_GetHighestConditionGearThatMatchesName_Postfix | checking backpack for " + name);
+                for (int i = 0; i < BPMain.backpackContainer.m_Items.Count; i++)
+                {
+                    GearItem newGearItem = BPMain.backpackContainer.m_Items[i];
+                    if (newGearItem.name != name)
+                    {
+                        continue;
+                    }
+                    if ((bool)newGearItem && ((bool)newGearItem.m_ToolsItem || (bool)newGearItem.m_ForceLockItem || (bool)newGearItem.m_BreakDownItem) && !Utils.IsZero(newGearItem.CurrentHP))
+                    {
+                        isFound = true;
+                        if (!BPUtils.IsBackpackInRange())
+                        {
+                            BPUtils.DebugMsg("Inventory_GetHighestConditionGearThatMatchesName_Postfix | backpack had " + name + " | " + isFound + " | NOT IN RANGE");
+                            HUDMessage.AddMessage("Backpack out of range", 1, true, true);
+                            return;
+                        }
+                        __result = newGearItem;
+                        BPUtils.DebugMsg("Inventory_GetHighestConditionGearThatMatchesName_Postfix | backpack had " + name + " | " + isFound);
+                        return;
                     }
                 }
             }
